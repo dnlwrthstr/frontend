@@ -1,36 +1,20 @@
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, FormControl, FormLabel, Input, ModalFooter } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-
-interface Account {
-  id: string;
-  name: string;
-  number: string;
-  type: string;
-  balance: number;
-  currency: string;
-}
+import accountsApi, { Account, CreateAccountRequest } from '../api/accountsApi';
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [newAccount, setNewAccount] = useState({ name: '', number: '', type: 'SECURITIES' });
+  const [newAccount, setNewAccount] = useState<CreateAccountRequest>({ name: '', number: '', type: 'SECURITIES' });
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
         setLoading(true);
-        // In a real app, this would be a call to the API
-        // const response = await axios.get('/api/accounts');
-        // setAccounts(response.data);
-
-        // For now, we'll use mock data
-        setAccounts([
-          { id: '1', name: 'Main Account', number: '1234567890', type: 'SECURITIES', balance: 125000, currency: 'USD' },
-          { id: '2', name: 'Retirement', number: '0987654321', type: 'RETIREMENT', balance: 450000, currency: 'USD' },
-          { id: '3', name: 'Savings', number: '5678901234', type: 'SAVINGS', balance: 75000, currency: 'USD' }
-        ]);
+        const accounts = await accountsApi.getAccounts();
+        setAccounts(accounts);
       } catch (err) {
         setError('Failed to fetch accounts');
         console.error(err);
@@ -44,17 +28,8 @@ const Accounts = () => {
 
   const handleCreateAccount = async () => {
     try {
-      // In a real app, this would be a call to the API
-      // await axios.post('/api/accounts', newAccount);
-
-      // For now, we'll just add it to the local state
-      const newId = (accounts.length + 1).toString();
-      setAccounts([...accounts, { 
-        id: newId, 
-        ...newAccount, 
-        balance: 0, 
-        currency: 'USD' 
-      }]);
+      const createdAccount = await accountsApi.createAccount(newAccount);
+      setAccounts([...accounts, createdAccount]);
 
       onClose();
       setNewAccount({ name: '', number: '', type: 'SECURITIES' });
