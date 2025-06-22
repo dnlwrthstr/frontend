@@ -1,6 +1,5 @@
 import { Box, Heading, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, Card, CardBody } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 
 interface AccountSummary {
   id: string;
@@ -22,7 +21,7 @@ const Dashboard = () => {
         // In a real app, this would be a call to the API
         // const response = await axios.get('/api/accounts');
         // setAccounts(response.data);
-        
+
         // For now, we'll use mock data
         setAccounts([
           { id: '1', name: 'Main Account', totalValue: 125000, currency: 'USD', positionsCount: 15 },

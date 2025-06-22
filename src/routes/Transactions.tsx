@@ -1,6 +1,5 @@
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Badge, Spinner, Select, Flex } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 
 interface Transaction {
   id: string;
@@ -27,7 +26,7 @@ const Transactions = () => {
         // In a real app, this would be a call to the API
         // const response = await axios.get('/api/transactions');
         // setTransactions(response.data);
-        
+
         // For now, we'll use mock data
         setTransactions([
           { id: '1', date: '2023-06-15', type: 'BUY', isin: 'US0378331005', name: 'Apple Inc.', quantity: 10, price: 175, amount: -1750, currency: 'USD' },
@@ -57,7 +56,7 @@ const Transactions = () => {
   return (
     <Box>
       <Heading mb={6}>Transactions</Heading>
-      
+
       <Flex mb={4}>
         <Select 
           width="200px" 
@@ -71,7 +70,7 @@ const Transactions = () => {
           <option value="FEE">Fee</option>
         </Select>
       </Flex>
-      
+
       <Table variant="simple">
         <Thead>
           <Tr>

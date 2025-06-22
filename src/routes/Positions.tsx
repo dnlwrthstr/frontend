@@ -1,6 +1,5 @@
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Badge, Text, Spinner } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 
 interface Position {
   id: string;
@@ -25,7 +24,7 @@ const Positions = () => {
         // In a real app, this would be a call to the API
         // const response = await axios.get('/api/positions');
         // setPositions(response.data);
-        
+
         // For now, we'll use mock data
         setPositions([
           { id: '1', isin: 'US0378331005', name: 'Apple Inc.', quantity: 50, marketValue: 8750, currency: 'USD', profitLoss: 1250, profitLossPercentage: 16.67 },

@@ -1,6 +1,5 @@
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, FormControl, FormLabel, Input, ModalFooter } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 
 interface Account {
   id: string;
@@ -25,7 +24,7 @@ const Accounts = () => {
         // In a real app, this would be a call to the API
         // const response = await axios.get('/api/accounts');
         // setAccounts(response.data);
-        
+
         // For now, we'll use mock data
         setAccounts([
           { id: '1', name: 'Main Account', number: '1234567890', type: 'SECURITIES', balance: 125000, currency: 'USD' },
@@ -47,7 +46,7 @@ const Accounts = () => {
     try {
       // In a real app, this would be a call to the API
       // await axios.post('/api/accounts', newAccount);
-      
+
       // For now, we'll just add it to the local state
       const newId = (accounts.length + 1).toString();
       setAccounts([...accounts, { 
@@ -56,7 +55,7 @@ const Accounts = () => {
         balance: 0, 
         currency: 'USD' 
       }]);
-      
+
       onClose();
       setNewAccount({ name: '', number: '', type: 'SECURITIES' });
     } catch (err) {
@@ -70,11 +69,11 @@ const Accounts = () => {
   return (
     <Box>
       <Heading mb={6}>Accounts</Heading>
-      
+
       <Button colorScheme="teal" mb={4} onClick={onOpen}>
         Create New Account
       </Button>
-      
+
       <Table variant="simple">
         <Thead>
           <Tr>
@@ -95,7 +94,7 @@ const Accounts = () => {
           ))}
         </Tbody>
       </Table>
-      
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
