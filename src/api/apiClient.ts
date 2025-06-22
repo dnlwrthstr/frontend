@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Create an axios instance with default config
 const apiClient = axios.create({
-  baseURL: '/api', // This will be proxied to http://localhost:8002 by Vite
+  baseURL: '/api', // This will be proxied to http://localhost:8010 by Vite
   headers: {
     'Content-Type': 'application/json',
   },
@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
       console.error('API Error:', error.response.data);
-      
+
       // Handle specific status codes
       if (error.response.status === 401) {
         // Unauthorized - redirect to login or refresh token
@@ -48,7 +48,7 @@ apiClient.interceptors.response.use(
       // Something happened in setting up the request that triggered an Error
       console.error('Request error:', error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -58,15 +58,15 @@ export const api = {
   get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     return apiClient.get<T, AxiosResponse<T>>(url, config).then(response => response.data);
   },
-  
+
   post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
     return apiClient.post<T, AxiosResponse<T>>(url, data, config).then(response => response.data);
   },
-  
+
   put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
     return apiClient.put<T, AxiosResponse<T>>(url, data, config).then(response => response.data);
   },
-  
+
   delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     return apiClient.delete<T, AxiosResponse<T>>(url, config).then(response => response.data);
   }

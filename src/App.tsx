@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('./routes/Dashboard'));
 const Positions = lazy(() => import('./routes/Positions'));
 const Transactions = lazy(() => import('./routes/Transactions'));
 const Accounts = lazy(() => import('./routes/Accounts'));
+const Custodians = lazy(() => import('./routes/Custodians'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -25,7 +26,8 @@ function App() {
           <Route path="/positions" element={<Positions />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/accounts" element={<Accounts />} />
-          
+          <Route path="/custodians" element={<Custodians />} />
+
           {/* Redirect to dashboard for any unmatched routes */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

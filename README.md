@@ -22,7 +22,7 @@ A modern, modular frontend for an OpenWealth-based Custodian Service using React
 
 - Node.js (v18 or later)
 - npm or pnpm
-- A running backend API (on http://localhost:8002)
+- A running backend API (on http://localhost:8010)
 
 ## Getting Started
 
@@ -40,6 +40,14 @@ npm run dev
 ```
 
 The application will be available at http://localhost:3003.
+
+### Environment Configuration
+
+The application uses a `.env` file for local development configuration. By default, the standalone development server runs on port 3003. You can modify this by changing the `PORT` value in the `.env` file:
+
+```
+PORT=3003
+```
 
 ## Project Structure
 
@@ -61,9 +69,9 @@ The project follows a domain-based organization to support modularity:
 
 ## API Integration
 
-The frontend connects to a backend API running on http://localhost:8002. The development server proxies API calls to the backend.
+The frontend connects to a backend API running on http://localhost:8010. The development server proxies API calls to the backend.
 
-API documentation is available at http://localhost:8002/docs.
+API documentation is available at http://localhost:8010/docs.
 
 ## Available Scripts
 
@@ -74,7 +82,7 @@ API documentation is available at http://localhost:8002/docs.
 
 ## Docker Deployment
 
-To run the application in Docker:
+To run the application in Docker (note that Docker uses port 3002 while standalone development uses port 3003):
 
 1. Build the Docker image:
 ```bash
