@@ -1,5 +1,6 @@
 import { Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Text, Spinner } from '@chakra-ui/react';
 import { Position } from '../../api/positionsApi';
+import { formatNumber } from '../../shared/formatters';
 
 interface PositionsListProps {
   positions: Position[];
@@ -15,9 +16,10 @@ const PositionsList = ({ positions, isLoading, error }: PositionsListProps) => {
     <Table variant="simple">
       <Thead>
         <Tr>
-          <Th>ISIN</Th>
-          <Th>Name</Th>
+          <Th>Security Type</Th>
+          <Th>Security ID</Th>
           <Th isNumeric>Quantity</Th>
+          <Th width="80px">Currency</Th>
           <Th isNumeric>Market Value</Th>
           <Th isNumeric>Profit/Loss</Th>
         </Tr>
@@ -25,15 +27,16 @@ const PositionsList = ({ positions, isLoading, error }: PositionsListProps) => {
       <Tbody>
         {positions.map(position => (
           <Tr key={position.id}>
-            <Td>{position.isin}</Td>
-            <Td>{position.name}</Td>
+            <Td>{position.security_type}</Td>
+            <Td>{position.security_id}</Td>
             <Td isNumeric>{position.quantity}</Td>
-            <Td isNumeric>{new Intl.NumberFormat('en-US', { style: 'currency', currency: position.currency }).format(position.marketValue)}</Td>
+            <Td>{position.currency}</Td>
+            <Td isNumeric>{formatNumber(position.market_value || 0)}</Td>
             <Td isNumeric>
-              <Text color={position.profitLoss >= 0 ? 'green.500' : 'red.500'}>
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: position.currency }).format(position.profitLoss)}
-                <Badge ml={2} colorScheme={position.profitLoss >= 0 ? 'green' : 'red'}>
-                  {position.profitLoss >= 0 ? '+' : ''}{position.profitLossPercentage.toFixed(2)}%
+              <Text color={(position.unrealized_pl || 0) >= 0 ? 'green.500' : 'red.500'}>
+                {formatNumber(position.unrealized_pl || 0)}
+                <Badge ml={2} colorScheme={(position.unrealized_pl || 0) >= 0 ? 'green' : 'red'}>
+                  {(position.unrealized_pl || 0) >= 0 ? '+' : ''}{position.profitLossPercentage?.toFixed(2) || '0.00'}%
                 </Badge>
               </Text>
             </Td>

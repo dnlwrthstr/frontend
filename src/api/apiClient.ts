@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Create an axios instance with default config
 const apiClient = axios.create({
-  baseURL: '/api', // This will be proxied to http://localhost:8010 by Vite
+  baseURL: import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : '/api', // Use environment variable or fallback to proxy
   headers: {
     'Content-Type': 'application/json',
   },

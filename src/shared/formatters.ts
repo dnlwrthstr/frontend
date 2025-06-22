@@ -26,7 +26,10 @@ export const formatDate = (
   options: Intl.DateTimeFormatOptions = { 
     year: 'numeric', 
     month: 'short', 
-    day: 'numeric' 
+    day: 'numeric',
+    hour: undefined,
+    minute: undefined,
+    second: undefined
   }
 ): string => {
   return new Date(dateString).toLocaleDateString(undefined, options);
@@ -38,6 +41,22 @@ export const formatDate = (
  * @param decimals Number of decimal places
  * @returns Formatted percentage string
  */
-export const formatPercentage = (value: number, decimals: number = 2): string => {
+export const formatPercentage = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value === null || value === undefined) {
+    return `0.${'0'.repeat(decimals)}%`;
+  }
   return `${(value * 100).toFixed(decimals)}%`;
+};
+
+/**
+ * Format a number with specified decimal places
+ * @param value The number to format
+ * @param decimals Number of decimal places
+ * @returns Formatted number string without currency symbol
+ */
+export const formatNumber = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+  return value.toFixed(decimals);
 };

@@ -16,15 +16,15 @@ export interface CreateAccountRequest {
 }
 
 const accountsApi = {
-  getAccounts: () => api.get<Account[]>('/accounts'),
-  
-  getAccount: (id: string) => api.get<Account>(`/accounts/${id}`),
-  
-  createAccount: (account: CreateAccountRequest) => api.post<Account>('/accounts', account),
-  
-  updateAccount: (id: string, account: Partial<Account>) => api.put<Account>(`/accounts/${id}`, account),
-  
-  deleteAccount: (id: string) => api.delete(`/accounts/${id}`)
+  getAccounts: (custodianId: string = '1') => api.get<Account[]>(`/v1/custodian/${custodianId}/accounts`),
+
+  getAccount: (id: string, custodianId: string = '1') => api.get<Account>(`/v1/custodian/${custodianId}/accounts/${id}`),
+
+  createAccount: (account: CreateAccountRequest, custodianId: string = '1') => api.post<Account>(`/v1/custodian/${custodianId}/accounts`, account),
+
+  updateAccount: (id: string, account: Partial<Account>, custodianId: string = '1') => api.put<Account>(`/v1/custodian/${custodianId}/accounts/${id}`, account),
+
+  deleteAccount: (id: string, custodianId: string = '1') => api.delete(`/v1/custodian/${custodianId}/accounts/${id}`)
 };
 
 export default accountsApi;

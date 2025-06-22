@@ -1,38 +1,51 @@
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Badge, Text, Spinner } from '@chakra-ui/react';
+import { 
+  Box, 
+  Heading, 
+  Table, 
+  Thead, 
+  Tbody, 
+  Tr, 
+  Th, 
+  Td, 
+  Badge, 
+  Text, 
+  Spinner, 
+  Button, 
+  Modal, 
+  ModalOverlay, 
+  ModalContent, 
+  ModalHeader, 
+  ModalFooter, 
+  ModalBody, 
+  ModalCloseButton,
+  useDisclosure
+} from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-
-interface Position {
-  id: string;
-  isin: string;
-  name: string;
-  quantity: number;
-  marketValue: number;
-  currency: string;
-  profitLoss: number;
-  profitLossPercentage: number;
-}
+import positionsApi, { Position } from '../api/positionsApi';
+import custodiansApi from '../api/custodiansApi';
+import PositionDetail from '../features/positions/PositionDetail';
 
 const Positions = () => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
-    const fetchPositions = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // In a real app, this would be a call to the API
-        // const response = await axios.get('/api/positions');
-        // setPositions(response.data);
 
-        // For now, we'll use mock data
-        setPositions([
-          { id: '1', isin: 'US0378331005', name: 'Apple Inc.', quantity: 50, marketValue: 8750, currency: 'USD', profitLoss: 1250, profitLossPercentage: 16.67 },
-          { id: '2', isin: 'US5949181045', name: 'Microsoft Corp.', quantity: 30, marketValue: 10200, currency: 'USD', profitLoss: 2200, profitLossPercentage: 27.5 },
-          { id: '3', isin: 'US0231351067', name: 'Amazon.com Inc.', quantity: 15, marketValue: 5100, currency: 'USD', profitLoss: -300, profitLossPercentage: -5.56 },
-          { id: '4', isin: 'US88160R1014', name: 'Tesla Inc.', quantity: 20, marketValue: 4800, currency: 'USD', profitLoss: 800, profitLossPercentage: 20 },
-          { id: '5', isin: 'US30303M1027', name: 'Meta Platforms Inc.', quantity: 25, marketValue: 6250, currency: 'USD', profitLoss: -750, profitLossPercentage: -10.71 }
-        ]);
+        // First fetch custodians to get a custodian ID
+        const custodians = await custodiansApi.getCustodians();
+
+        // Use the first custodian's ID if available, otherwise use default
+        const custodianId = custodians.length > 0 ? custodians[0].id : '1';
+
+        // Then fetch positions using the custodian ID
+        const positionsData = await positionsApi.getPositions(custodianId);
+        setPositions(positionsData);
       } catch (err) {
         setError('Failed to fetch positions');
         console.error(err);
@@ -41,7 +54,7 @@ const Positions = () => {
       }
     };
 
-    fetchPositions();
+    fetchData();
   }, []);
 
   if (loading) return <Spinner size="xl" />;
@@ -53,32 +66,64 @@ const Positions = () => {
       <Table variant="simple">
         <Thead>
           <Tr>
-            <Th>ISIN</Th>
-            <Th>Name</Th>
+            <Th>Security Type</Th>
+            <Th>Security ID</Th>
             <Th isNumeric>Quantity</Th>
+            <Th>Currency</Th>
             <Th isNumeric>Market Value</Th>
             <Th isNumeric>Profit/Loss</Th>
+            <Th>Actions</Th>
           </Tr>
         </Thead>
         <Tbody>
           {positions.map(position => (
             <Tr key={position.id}>
-              <Td>{position.isin}</Td>
-              <Td>{position.name}</Td>
+              <Td>{position.security_type}</Td>
+              <Td>{position.security_id}</Td>
               <Td isNumeric>{position.quantity}</Td>
-              <Td isNumeric>{new Intl.NumberFormat('en-US', { style: 'currency', currency: position.currency }).format(position.marketValue)}</Td>
+              <Td>{position.currency}</Td>
+              <Td isNumeric>{new Intl.NumberFormat('en-US', { style: 'currency', currency: position.currency }).format(position.market_value || 0)}</Td>
               <Td isNumeric>
-                <Text color={position.profitLoss >= 0 ? 'green.500' : 'red.500'}>
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: position.currency }).format(position.profitLoss)}
-                  <Badge ml={2} colorScheme={position.profitLoss >= 0 ? 'green' : 'red'}>
-                    {position.profitLoss >= 0 ? '+' : ''}{position.profitLossPercentage.toFixed(2)}%
+                <Text color={(position.unrealized_pl || 0) >= 0 ? 'green.500' : 'red.500'}>
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: position.currency }).format(position.unrealized_pl || 0)}
+                  <Badge ml={2} colorScheme={(position.unrealized_pl || 0) >= 0 ? 'green' : 'red'}>
+                    {(position.unrealized_pl || 0) >= 0 ? '+' : ''}{position.profitLossPercentage?.toFixed(2) || '0.00'}%
                   </Badge>
                 </Text>
+              </Td>
+              <Td>
+                <Button 
+                  size="sm" 
+                  colorScheme="blue"
+                  onClick={() => {
+                    setSelectedPosition(position);
+                    onOpen();
+                  }}
+                >
+                  View Details
+                </Button>
               </Td>
             </Tr>
           ))}
         </Tbody>
       </Table>
+
+      {/* Position Detail Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Position Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedPosition && <PositionDetail position={selectedPosition} />}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

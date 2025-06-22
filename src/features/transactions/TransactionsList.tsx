@@ -1,5 +1,6 @@
-import { Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Spinner, Select, Flex } from '@chakra-ui/react';
+import { Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Spinner, Select, Flex, Button, IconButton } from '@chakra-ui/react';
 import { Transaction, TransactionType } from '../../api/transactionsApi';
+import { formatNumber, formatDate } from '../../shared/formatters';
 
 interface TransactionsListProps {
   transactions: Transaction[];
@@ -15,7 +16,7 @@ const TransactionsList = ({ transactions, isLoading, error, filter, onFilterChan
 
   const filteredTransactions = filter === 'ALL' 
     ? transactions 
-    : transactions.filter(transaction => transaction.type === filter);
+    : transactions.filter(transaction => (transaction.type || transaction.transaction_type) === filter);
 
   return (
     <Box>
@@ -36,37 +37,49 @@ const TransactionsList = ({ transactions, isLoading, error, filter, onFilterChan
       <Table variant="simple">
         <Thead>
           <Tr>
-            <Th>Date</Th>
-            <Th>Type</Th>
-            <Th>Security</Th>
+            <Th>Transaction ID</Th>
+            <Th width="200px">Trade Date</Th>
+            <Th>Transaction Type</Th>
+            <Th>Security ID</Th>
+            <Th>Security Type</Th>
             <Th isNumeric>Quantity</Th>
+            <Th width="80px">Currency</Th>
             <Th isNumeric>Price</Th>
             <Th isNumeric>Amount</Th>
+            <Th>Actions</Th>
           </Tr>
         </Thead>
         <Tbody>
           {filteredTransactions.map(transaction => (
             <Tr key={transaction.id}>
-              <Td>{new Date(transaction.date).toLocaleDateString()}</Td>
+              <Td>{transaction.transaction_id || transaction.id}</Td>
+              <Td>{formatDate(transaction.trade_date || transaction.date)}</Td>
               <Td>
                 <Badge 
                   colorScheme={
-                    transaction.type === 'BUY' ? 'blue' : 
-                    transaction.type === 'SELL' ? 'green' : 
-                    transaction.type === 'DIVIDEND' ? 'purple' : 
+                    (transaction.type || transaction.transaction_type) === 'BUY' ? 'blue' : 
+                    (transaction.type || transaction.transaction_type) === 'SELL' ? 'green' : 
+                    (transaction.type || transaction.transaction_type) === 'DIVIDEND' ? 'purple' : 
                     'red'
                   }
                 >
-                  {transaction.type}
+                  {transaction.type || transaction.transaction_type}
                 </Badge>
               </Td>
-              <Td>{transaction.name || '-'}</Td>
+              <Td>{transaction.security_id || '-'}</Td>
+              <Td>{transaction.security_type || '-'}</Td>
               <Td isNumeric>{transaction.quantity || '-'}</Td>
-              <Td isNumeric>{transaction.price ? new Intl.NumberFormat('en-US', { style: 'currency', currency: transaction.currency }).format(transaction.price) : '-'}</Td>
+              <Td>{transaction.currency}</Td>
+              <Td isNumeric>{transaction.price ? formatNumber(transaction.price) : '-'}</Td>
               <Td isNumeric>
                 <Box color={transaction.amount >= 0 ? 'green.500' : 'red.500'}>
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: transaction.currency }).format(transaction.amount)}
+                  {formatNumber(transaction.amount)}
                 </Box>
+              </Td>
+              <Td>
+                <Button size="sm" colorScheme="blue" mr={2}>
+                  View
+                </Button>
               </Td>
             </Tr>
           ))}

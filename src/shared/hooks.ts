@@ -39,7 +39,7 @@ export function useAsync<T, P extends any[]>(
   // Call execute if immediate is true
   useEffect(() => {
     if (immediate) {
-      execute();
+      execute(...([] as unknown as P));
     }
   }, [execute, immediate]);
 
