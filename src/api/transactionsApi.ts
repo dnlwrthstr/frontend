@@ -17,6 +17,8 @@ export interface Transaction {
   transaction_id?: string;
   custodian_id?: string;
   portfolio_id?: string;
+  account_id?: string; // Added to match backend model
+  transaction_type?: string; // Added to match backend model
   security_id?: string;
   security_type?: string;
   trade_date?: string;
@@ -61,7 +63,11 @@ const transactionsApi = {
 
   getTransaction: (id: string, custodianId: string = '1') => api.get<Transaction>(`/v1/custodian/${custodianId}/transactions/${id}`),
 
-  getAccountTransactions: (accountId: string, custodianId: string = '1') => api.get<Transaction[]>(`/v1/custodian/${custodianId}/transactions?account_id=${accountId}`)
+  getAccountTransactions: (accountId: string, custodianId: string = '1') => api.get<Transaction[]>(`/v1/custodian/${custodianId}/transactions?account_id=${accountId}`),
+
+  createTransaction: (transaction: Partial<Transaction>, custodianId: string) => {
+    return api.post<Transaction>(`/v1/custodian/${custodianId}/transactions`, transaction);
+  }
 };
 
 export default transactionsApi;

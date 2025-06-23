@@ -2,21 +2,29 @@ import api from './apiClient';
 
 export interface Account {
   id: string;
+  custodian_id: string;
+  portfolio_id: string;
+  account_id: string;
   name: string;
-  number: string;
-  type: string;
-  balance: number;
+  account_type: string;
   currency: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateAccountRequest {
+  custodian_id: string;
+  portfolio_id: string;
+  account_id: string;
   name: string;
-  number: string;
-  type: string;
+  account_type: string;
+  currency: string;
+  balance?: number;
 }
 
 const accountsApi = {
-  getAccounts: (custodianId: string = '1') => api.get<Account[]>(`/v1/custodian/${custodianId}/accounts`),
+  getAccounts: (custodianId: string = '1', portfolioId?: string) => api.get<Account[]>(`/v1/custodian/${custodianId}/accounts${portfolioId ? `?portfolio_id=${portfolioId}` : ''}`),
 
   getAccount: (id: string, custodianId: string = '1') => api.get<Account>(`/v1/custodian/${custodianId}/accounts/${id}`),
 

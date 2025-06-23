@@ -1,4 +1,4 @@
-import { Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Spinner, Select, Flex, Button, IconButton } from '@chakra-ui/react';
+import { Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Spinner, Select, Flex, Button } from '@chakra-ui/react';
 import { Transaction, TransactionType } from '../../api/transactionsApi';
 import { formatNumber, formatDate } from '../../shared/formatters';
 

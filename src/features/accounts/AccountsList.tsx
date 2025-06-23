@@ -31,8 +31,8 @@ const AccountsList = ({ accounts, isLoading, error, onSelectAccount }: AccountsL
             _hover={onSelectAccount ? { bg: 'gray.50' } : undefined}
           >
             <Td>{account.name}</Td>
-            <Td>{account.number}</Td>
-            <Td>{account.type}</Td>
+            <Td>{account.account_id}</Td>
+            <Td>{account.account_type}</Td>
             <Td isNumeric>{new Intl.NumberFormat('en-US', { style: 'currency', currency: account.currency }).format(account.balance)}</Td>
           </Tr>
         ))}

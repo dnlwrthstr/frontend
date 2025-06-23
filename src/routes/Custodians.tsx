@@ -12,7 +12,11 @@ const Custodians = () => {
     name: '', 
     code: '', 
     description: '', 
-    contact_info: {}, 
+    contact_info: {
+      email: '',
+      phone: '',
+      address: ''
+    }, 
     api_credentials: {} 
   });
 
@@ -75,7 +79,11 @@ const Custodians = () => {
         name: '', 
         code: '', 
         description: '', 
-        contact_info: {}, 
+        contact_info: {
+          email: '',
+          phone: '',
+          address: ''
+        }, 
         api_credentials: {} 
       });
     } catch (err) {
@@ -121,7 +129,13 @@ const Custodians = () => {
                   <Td fontWeight="semibold">{custodian.name}</Td>
                   <Td>{custodian.code}</Td>
                   <Td>{custodian.description || 'N/A'}</Td>
-                  <Td>{custodian.contact_info ? Object.keys(custodian.contact_info).length : 0} entries</Td>
+                  <Td>
+                    <Box>
+                      <Text><strong>Email:</strong> {custodian.contact_info?.email || 'N/A'}</Text>
+                      <Text><strong>Phone:</strong> {custodian.contact_info?.phone || 'N/A'}</Text>
+                      <Text><strong>Address:</strong> {custodian.contact_info?.address || 'N/A'}</Text>
+                    </Box>
+                  </Td>
                   <Td>{new Date(custodian.created_at).toLocaleDateString()}</Td>
                 </Tr>
               ))}
@@ -150,11 +164,50 @@ const Custodians = () => {
                 onChange={(e) => setNewCustodian({...newCustodian, code: e.target.value})} 
               />
             </FormControl>
-            <FormControl>
+            <FormControl mb={4}>
               <FormLabel>Description</FormLabel>
               <Input 
                 value={newCustodian.description} 
                 onChange={(e) => setNewCustodian({...newCustodian, description: e.target.value})}
+              />
+            </FormControl>
+            <FormControl mb={4}>
+              <FormLabel>Email</FormLabel>
+              <Input 
+                value={newCustodian.contact_info?.email || ''} 
+                onChange={(e) => setNewCustodian({
+                  ...newCustodian, 
+                  contact_info: {
+                    ...newCustodian.contact_info,
+                    email: e.target.value
+                  }
+                })}
+              />
+            </FormControl>
+            <FormControl mb={4}>
+              <FormLabel>Phone</FormLabel>
+              <Input 
+                value={newCustodian.contact_info?.phone || ''} 
+                onChange={(e) => setNewCustodian({
+                  ...newCustodian, 
+                  contact_info: {
+                    ...newCustodian.contact_info,
+                    phone: e.target.value
+                  }
+                })}
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Address</FormLabel>
+              <Input 
+                value={newCustodian.contact_info?.address || ''} 
+                onChange={(e) => setNewCustodian({
+                  ...newCustodian, 
+                  contact_info: {
+                    ...newCustodian.contact_info,
+                    address: e.target.value
+                  }
+                })}
               />
             </FormControl>
           </ModalBody>

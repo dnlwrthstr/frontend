@@ -1,41 +1,119 @@
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, FormControl, FormLabel, Input, ModalFooter } from '@chakra-ui/react';
+import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Button, Spinner, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, FormControl, FormLabel, Input, ModalFooter, Select, Flex } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import accountsApi, { Account, CreateAccountRequest } from '../api/accountsApi';
+import portfoliosApi, { Portfolio } from '../api/portfoliosApi';
+import custodiansApi from '../api/custodiansApi';
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [newAccount, setNewAccount] = useState<CreateAccountRequest>({ name: '', number: '', type: 'SECURITIES' });
+  const [newAccount, setNewAccount] = useState<CreateAccountRequest>({ 
+    custodian_id: '1', 
+    portfolio_id: '', 
+    account_id: '', 
+    name: '', 
+    account_type: 'SECURITIES', 
+    currency: 'USD' 
+  });
+
+  const fetchAccounts = async (portfolioId?: string) => {
+    try {
+      setLoading(true);
+
+      // Fetch all custodians
+      const custodians = await custodiansApi.getCustodians();
+
+      // Fetch accounts for each custodian, filtered by portfolio if specified
+      const accountPromises = custodians.map(custodian => 
+        accountsApi.getAccounts(custodian.id, portfolioId)
+      );
+
+      // Wait for all account requests to complete
+      const accountResults = await Promise.all(accountPromises);
+
+      // Combine all accounts into a single array
+      const allAccounts = accountResults.flat();
+
+      // Set the accounts state
+      setAccounts(allAccounts);
+    } catch (err) {
+      setError('Failed to fetch accounts');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAccounts = async () => {
+    const fetchPortfolios = async () => {
       try {
-        setLoading(true);
-        const accounts = await accountsApi.getAccounts();
-        setAccounts(accounts);
+        // Fetch all custodians
+        const custodians = await custodiansApi.getCustodians();
+
+        // Fetch portfolios for each custodian
+        const portfolioPromises = custodians.map(custodian => 
+          portfoliosApi.getPortfolios(custodian.id)
+        );
+
+        // Wait for all portfolio requests to complete
+        const portfolioResults = await Promise.all(portfolioPromises);
+
+        // Combine all portfolios into a single array
+        const allPortfolios = portfolioResults.flat();
+
+        setPortfolios(allPortfolios);
+
+        // Set the first portfolio as selected by default if available
+        if (allPortfolios.length > 0) {
+          setSelectedPortfolio(allPortfolios[0].portfolio_id);
+          setNewAccount(prev => ({ ...prev, portfolio_id: allPortfolios[0].portfolio_id }));
+          fetchAccounts(allPortfolios[0].portfolio_id);
+        } else {
+          fetchAccounts();
+        }
       } catch (err) {
-        setError('Failed to fetch accounts');
+        setError('Failed to fetch portfolios');
         console.error(err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchAccounts();
+    fetchPortfolios();
   }, []);
 
   const handleCreateAccount = async () => {
     try {
-      const createdAccount = await accountsApi.createAccount(newAccount);
+      // Ensure the new account uses the selected portfolio
+      const accountToCreate = {
+        ...newAccount,
+        portfolio_id: selectedPortfolio || (portfolios.length > 0 ? portfolios[0].portfolio_id : '')
+      };
+
+      const createdAccount = await accountsApi.createAccount(accountToCreate);
       setAccounts([...accounts, createdAccount]);
 
       onClose();
-      setNewAccount({ name: '', number: '', type: 'SECURITIES' });
+      setNewAccount({ 
+        custodian_id: '1', 
+        portfolio_id: selectedPortfolio || '', 
+        account_id: '', 
+        name: '', 
+        account_type: 'SECURITIES', 
+        currency: 'USD' 
+      });
     } catch (err) {
       console.error('Failed to create account:', err);
     }
+  };
+
+  // Handle portfolio selection change
+  const handlePortfolioChange = (portfolioId: string) => {
+    setSelectedPortfolio(portfolioId);
+    fetchAccounts(portfolioId);
+    setNewAccount(prev => ({ ...prev, portfolio_id: portfolioId }));
   };
 
   if (loading) return <Spinner size="xl" />;
@@ -45,9 +123,25 @@ const Accounts = () => {
     <Box>
       <Heading mb={6}>Accounts</Heading>
 
-      <Button colorScheme="teal" mb={4} onClick={onOpen}>
-        Create New Account
-      </Button>
+      <Flex mb={4} alignItems="center">
+        <FormControl maxWidth="300px" mr={4}>
+          <FormLabel>Select Portfolio</FormLabel>
+          <Select 
+            value={selectedPortfolio} 
+            onChange={(e) => handlePortfolioChange(e.target.value)}
+          >
+            {portfolios.map(portfolio => (
+              <option key={portfolio.id} value={portfolio.portfolio_id}>
+                {portfolio.name}
+              </option>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Button colorScheme="teal" onClick={onOpen}>
+          Create New Account
+        </Button>
+      </Flex>
 
       <Table variant="simple">
         <Thead>
@@ -62,8 +156,8 @@ const Accounts = () => {
           {accounts.map(account => (
             <Tr key={account.id}>
               <Td>{account.name}</Td>
-              <Td>{account.number}</Td>
-              <Td>{account.type}</Td>
+              <Td>{account.account_id}</Td>
+              <Td>{account.account_type}</Td>
               <Td isNumeric>{new Intl.NumberFormat('en-US', { style: 'currency', currency: account.currency }).format(account.balance)}</Td>
             </Tr>
           ))}
@@ -77,6 +171,19 @@ const Accounts = () => {
           <ModalCloseButton />
           <ModalBody>
             <FormControl mb={4}>
+              <FormLabel>Portfolio</FormLabel>
+              <Select
+                value={newAccount.portfolio_id}
+                onChange={(e) => setNewAccount({...newAccount, portfolio_id: e.target.value})}
+              >
+                {portfolios.map(portfolio => (
+                  <option key={portfolio.id} value={portfolio.portfolio_id}>
+                    {portfolio.name}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl mb={4}>
               <FormLabel>Account Name</FormLabel>
               <Input 
                 value={newAccount.name} 
@@ -86,21 +193,31 @@ const Accounts = () => {
             <FormControl mb={4}>
               <FormLabel>Account Number</FormLabel>
               <Input 
-                value={newAccount.number} 
-                onChange={(e) => setNewAccount({...newAccount, number: e.target.value})} 
+                value={newAccount.account_id} 
+                onChange={(e) => setNewAccount({...newAccount, account_id: e.target.value})} 
               />
             </FormControl>
-            <FormControl>
+            <FormControl mb={4}>
               <FormLabel>Account Type</FormLabel>
-              <Input 
-                as="select" 
-                value={newAccount.type} 
-                onChange={(e) => setNewAccount({...newAccount, type: e.target.value})}
+              <Select
+                value={newAccount.account_type} 
+                onChange={(e) => setNewAccount({...newAccount, account_type: e.target.value})}
               >
                 <option value="SECURITIES">Securities</option>
                 <option value="RETIREMENT">Retirement</option>
                 <option value="SAVINGS">Savings</option>
-              </Input>
+              </Select>
+            </FormControl>
+            <FormControl mb={4}>
+              <FormLabel>Currency</FormLabel>
+              <Select
+                value={newAccount.currency} 
+                onChange={(e) => setNewAccount({...newAccount, currency: e.target.value})}
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </Select>
             </FormControl>
           </ModalBody>
           <ModalFooter>

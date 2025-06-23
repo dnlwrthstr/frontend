@@ -1,13 +1,6 @@
 import { 
   Box, 
   Heading, 
-  Table, 
-  Thead, 
-  Tbody, 
-  Tr, 
-  Th, 
-  Td, 
-  Badge, 
   Spinner, 
   Select, 
   Flex, 
@@ -20,27 +13,55 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
-  useDisclosure
+  useDisclosure,
+  FormControl,
+  FormLabel,
+  Input,
+  NumberInput,
+  NumberInputField,
+  useToast,
+  Card,
+  CardBody,
+  CardHeader
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import transactionsApi, { Transaction, TransactionType, TransactionFilter } from '../api/transactionsApi';
+import transactionsApi, { TransactionType } from '../api/transactionsApi';
 import custodiansApi, { Custodian } from '../api/custodiansApi';
-import TransactionDetail from '../features/transactions/TransactionDetail';
-import { formatDate, formatNumber } from '../shared/formatters';
 
 const Transactions = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [custodians, setCustodians] = useState<Custodian[]>([]);
   const [selectedCustodianId, setSelectedCustodianId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<TransactionType | 'ALL'>('ALL');
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Create transaction modal state
+  const { 
+    isOpen: isCreateModalOpen, 
+    onOpen: onCreateModalOpen, 
+    onClose: onCreateModalClose 
+  } = useDisclosure();
+
+  // Form state for new transaction
+  const [newTransaction, setNewTransaction] = useState({
+    transaction_type: 'BUY' as TransactionType,
+    account_id: '',
+    portfolio_id: '',
+    security_id: '',
+    security_type: '',
+    quantity: 0,
+    price: 0,
+    amount: 0,
+    currency: 'USD',
+    trade_date: new Date().toISOString().split('T')[0]
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     const fetchCustodians = async () => {
       try {
+        setLoading(true);
         const custodianData = await custodiansApi.getCustodians();
         setCustodians(custodianData);
 
@@ -51,165 +72,274 @@ const Transactions = () => {
       } catch (err) {
         setError('Failed to fetch custodians');
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchCustodians();
   }, [selectedCustodianId]);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!selectedCustodianId) return;
+  // Handle input changes for the new transaction form
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewTransaction(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-      try {
-        setLoading(true);
+  // Handle number input changes
+  const handleNumberChange = (name: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setNewTransaction(prev => ({
+      ...prev,
+      [name]: numValue
+    }));
 
-        // Create filter object for API call
-        const apiFilter: TransactionFilter = {
-          custodianId: selectedCustodianId
-        };
+    // If price or quantity changes, update amount
+    if (name === 'price' || name === 'quantity') {
+      const price = name === 'price' ? numValue : newTransaction.price;
+      const quantity = name === 'quantity' ? numValue : newTransaction.quantity;
+      const amount = price * quantity;
 
-        if (filter !== 'ALL') {
-          apiFilter.type = filter;
-        }
+      setNewTransaction(prev => ({
+        ...prev,
+        amount: amount
+      }));
+    }
+  };
 
-        const transactionsData = await transactionsApi.getTransactions(apiFilter);
-        setTransactions(transactionsData);
-      } catch (err) {
-        setError('Failed to fetch transactions');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!selectedCustodianId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a custodian',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
 
-    fetchTransactions();
-  }, [filter, selectedCustodianId]);
+    try {
+      setIsSubmitting(true);
+
+      // Create the transaction
+      await transactionsApi.createTransaction(newTransaction, selectedCustodianId);
+
+      // Show success message
+      toast({
+        title: 'Transaction created',
+        description: 'The transaction was successfully created',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+
+      // Close the modal and reset form
+      onCreateModalClose();
+      setNewTransaction({
+        transaction_type: 'BUY' as TransactionType,
+        account_id: '',
+        portfolio_id: '',
+        security_id: '',
+        security_type: '',
+        quantity: 0,
+        price: 0,
+        amount: 0,
+        currency: 'USD',
+        trade_date: new Date().toISOString().split('T')[0]
+      });
+
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create transaction',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) return <Spinner size="xl" />;
   if (error) return <Box color="red.500">{error}</Box>;
 
   return (
     <Box>
-      <Heading mb={6}>Transactions</Heading>
-
-      <Flex mb={4} gap={4}>
-        <Box>
-          <Text mb={2} fontWeight="medium">Custodian</Text>
-          <Select 
-            width="250px" 
-            value={selectedCustodianId} 
-            onChange={(e) => setSelectedCustodianId(e.target.value)}
-            isDisabled={custodians.length === 0}
-          >
-            {custodians.length === 0 ? (
-              <option value="">No custodians available</option>
-            ) : (
-              custodians.map(custodian => (
-                <option key={custodian.id} value={custodian.id}>
-                  {custodian.name} ({custodian.code})
-                </option>
-              ))
-            )}
-          </Select>
-        </Box>
-
-        <Box>
-          <Text mb={2} fontWeight="medium">Transaction Type</Text>
-          <Select 
-            width="200px" 
-            value={filter} 
-            onChange={(e) => setFilter(e.target.value as TransactionType | 'ALL')}
-          >
-            <option value="ALL">All Transactions</option>
-            <option value="BUY">Buy</option>
-            <option value="SELL">Sell</option>
-            <option value="DIVIDEND">Dividend</option>
-            <option value="FEE">Fee</option>
-          </Select>
-        </Box>
+      <Flex mb={6} justifyContent="space-between" alignItems="center">
+        <Heading>Transactions</Heading>
       </Flex>
 
-      {transactions.length === 0 ? (
-        <Box p={4} textAlign="center" borderWidth="1px" borderRadius="lg">
-          <Text fontSize="lg">No transactions found for the selected criteria.</Text>
-          <Text fontSize="sm" color="gray.500" mt={2}>
-            Try selecting a different custodian or transaction type.
-          </Text>
-        </Box>
-      ) : (
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Transaction ID</Th>
-              <Th>Trade Date</Th>
-              <Th>Transaction Type</Th>
-              <Th>Security ID</Th>
-              <Th>Security Type</Th>
-              <Th isNumeric>Quantity</Th>
-              <Th>Currency</Th>
-              <Th isNumeric>Price</Th>
-              <Th isNumeric>Amount</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {transactions.map(transaction => (
-              <Tr key={transaction.id}>
-                <Td>{transaction.transaction_id || transaction.id}</Td>
-                <Td>{formatDate(transaction.trade_date || transaction.date)}</Td>
-                <Td>
-                  <Badge 
-                    colorScheme={
-                      (transaction.type || transaction.transaction_type) === 'BUY' ? 'blue' : 
-                      (transaction.type || transaction.transaction_type) === 'SELL' ? 'green' : 
-                      (transaction.type || transaction.transaction_type) === 'DIVIDEND' ? 'purple' : 
-                      'red'
-                    }
-                  >
-                    {transaction.type || transaction.transaction_type}
-                  </Badge>
-                </Td>
-                <Td>{transaction.security_id || '-'}</Td>
-                <Td>{transaction.security_type || '-'}</Td>
-                <Td isNumeric>{transaction.quantity || '-'}</Td>
-                <Td>{transaction.currency}</Td>
-                <Td isNumeric>{transaction.price ? formatNumber(transaction.price) : '-'}</Td>
-                <Td isNumeric>
-                  <Box color={transaction.amount >= 0 ? 'green.500' : 'red.500'}>
-                    {formatNumber(transaction.amount)}
-                  </Box>
-                </Td>
-                <Td>
-                  <Button 
-                    size="sm" 
-                    colorScheme="blue"
-                    onClick={() => {
-                      setSelectedTransaction(transaction);
-                      onOpen();
-                    }}
-                  >
-                    View Details
-                  </Button>
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      )}
+      <Card>
+        <CardHeader>
+          <Heading size="md">Create a New Transaction</Heading>
+        </CardHeader>
+        <CardBody>
+          <Box mb={4}>
+            <Text mb={2} fontWeight="medium">Custodian</Text>
+            <Select 
+              width="250px" 
+              value={selectedCustodianId} 
+              onChange={(e) => setSelectedCustodianId(e.target.value)}
+              isDisabled={custodians.length === 0}
+            >
+              {custodians.length === 0 ? (
+                <option value="">No custodians available</option>
+              ) : (
+                custodians.map(custodian => (
+                  <option key={custodian.id} value={custodian.id}>
+                    {custodian.name} ({custodian.code})
+                  </option>
+                ))
+              )}
+            </Select>
+          </Box>
 
-      {/* Transaction Detail Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+          <Button 
+            colorScheme="blue" 
+            onClick={onCreateModalOpen}
+            isDisabled={!selectedCustodianId}
+            size="lg"
+            width="100%"
+          >
+            Create New Transaction
+          </Button>
+        </CardBody>
+      </Card>
+
+      {/* Create Transaction Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={onCreateModalClose} size="xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Transaction Details</ModalHeader>
+          <ModalHeader>Create Transaction</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            {selectedTransaction && <TransactionDetail transaction={selectedTransaction} />}
+            <FormControl mb={4}>
+              <FormLabel>Transaction Type</FormLabel>
+              <Select 
+                name="transaction_type" 
+                value={newTransaction.transaction_type} 
+                onChange={handleInputChange}
+              >
+                <option value="BUY">Buy</option>
+                <option value="SELL">Sell</option>
+                <option value="DIVIDEND">Dividend</option>
+                <option value="FEE">Fee</option>
+              </Select>
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Account ID</FormLabel>
+              <Input 
+                name="account_id" 
+                value={newTransaction.account_id} 
+                onChange={handleInputChange} 
+                placeholder="Enter account ID"
+              />
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Portfolio ID</FormLabel>
+              <Input 
+                name="portfolio_id" 
+                value={newTransaction.portfolio_id} 
+                onChange={handleInputChange} 
+                placeholder="Enter portfolio ID"
+              />
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Security ID</FormLabel>
+              <Input 
+                name="security_id" 
+                value={newTransaction.security_id} 
+                onChange={handleInputChange} 
+                placeholder="Enter security ID"
+              />
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Security Type</FormLabel>
+              <Input 
+                name="security_type" 
+                value={newTransaction.security_type} 
+                onChange={handleInputChange} 
+                placeholder="Enter security type"
+              />
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Quantity</FormLabel>
+              <NumberInput min={0}>
+                <NumberInputField 
+                  name="quantity" 
+                  value={newTransaction.quantity} 
+                  onChange={(e) => handleNumberChange('quantity', e.target.value)} 
+                />
+              </NumberInput>
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Price</FormLabel>
+              <NumberInput min={0}>
+                <NumberInputField 
+                  name="price" 
+                  value={newTransaction.price} 
+                  onChange={(e) => handleNumberChange('price', e.target.value)} 
+                />
+              </NumberInput>
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Amount (Calculated)</FormLabel>
+              <NumberInput isReadOnly>
+                <NumberInputField 
+                  value={newTransaction.amount} 
+                />
+              </NumberInput>
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Currency</FormLabel>
+              <Select 
+                name="currency" 
+                value={newTransaction.currency} 
+                onChange={handleInputChange}
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="CHF">CHF</option>
+                <option value="GBP">GBP</option>
+              </Select>
+            </FormControl>
+
+            <FormControl mb={4}>
+              <FormLabel>Trade Date</FormLabel>
+              <Input 
+                name="trade_date" 
+                type="date" 
+                value={newTransaction.trade_date} 
+                onChange={handleInputChange} 
+              />
+            </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
-              Close
+            <Button variant="ghost" mr={3} onClick={onCreateModalClose}>
+              Cancel
+            </Button>
+            <Button 
+              colorScheme="blue" 
+              onClick={handleSubmit}
+              isLoading={isSubmitting}
+              loadingText="Creating..."
+            >
+              Create Transaction
             </Button>
           </ModalFooter>
         </ModalContent>

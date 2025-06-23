@@ -97,7 +97,8 @@ const Dashboard = () => {
       }
 
       // Derive security type from ISIN
-      const deriveSecurityType = (isin: string): string => {
+      const deriveSecurityType = (isin: string | undefined): string => {
+        if (!isin) return 'Unknown';
         if (isin.startsWith('IE') || isin.startsWith('LU')) return 'ETF';
         if (isin.includes('Bond') || isin.includes('Bund')) return 'Bond';
         return 'Equity';
