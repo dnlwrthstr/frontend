@@ -1,15 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Box, Spinner } from '@chakra-ui/react';
 import Layout from './components/Layout';
 
-// Lazy load route components for better performance
-const Dashboard = lazy(() => import('./routes/Dashboard'));
-const Positions = lazy(() => import('./routes/Positions'));
-const Transactions = lazy(() => import('./routes/Transactions'));
-const Accounts = lazy(() => import('./routes/Accounts'));
-const Custodians = lazy(() => import('./routes/Custodians'));
-const Portfolios = lazy(() => import('./routes/Portfolios'));
+// Lazy load the main component for better performance
+const CustodianPortfolioPositions = lazy(() => import('./routes/CustodianPortfolioPositions'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -22,17 +16,7 @@ function App() {
   return (
     <Layout>
       <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/positions" element={<Positions />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/accounts" element={<Accounts />} />
-          <Route path="/custodians" element={<Custodians />} />
-          <Route path="/portfolios" element={<Portfolios />} />
-
-          {/* Redirect to dashboard for any unmatched routes */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <CustodianPortfolioPositions />
       </Suspense>
     </Layout>
   );
