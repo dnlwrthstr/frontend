@@ -17,6 +17,7 @@ const Layout = ({ children }: LayoutProps) => {
           <Link as={RouterLink} to="/positions" mr={4}>Positions</Link>
           <Link as={RouterLink} to="/transactions" mr={4}>Transactions</Link>
           <Link as={RouterLink} to="/accounts" mr={4}>Accounts</Link>
+          <Link as={RouterLink} to="/portfolios" mr={4}>Portfolios</Link>
           <Link as={RouterLink} to="/custodians">Custodians</Link>
         </Box>
       </Flex>

@@ -26,6 +26,20 @@ export interface Position {
   profitLossPercentage?: number;
 }
 
+export interface PositionCreate {
+  portfolio_id: string;
+  account_id: string;
+  position_id: string;
+  security_id: string;
+  security_type: string;
+  quantity: number;
+  market_value: number;
+  currency: string;
+  cost_basis?: number;
+  unrealized_pl?: number;
+  as_of_date?: string;
+}
+
 const positionsApi = {
   getPositions: (custodianId: string = '1', accountId?: string) => {
     const url = accountId 
@@ -36,7 +50,10 @@ const positionsApi = {
 
   getPosition: (id: string, custodianId: string = '1') => api.get<Position>(`/v1/custodian/${custodianId}/positions/${id}`),
 
-  getPositionsByIsin: (isin: string, custodianId: string = '1') => api.get<Position[]>(`/v1/custodian/${custodianId}/positions?isin=${isin}`)
+  getPositionsByIsin: (isin: string, custodianId: string = '1') => api.get<Position[]>(`/v1/custodian/${custodianId}/positions?isin=${isin}`),
+
+  createPosition: (position: PositionCreate, custodianId: string = '1') => 
+    api.post<Position>(`/v1/custodian/${custodianId}/positions`, position)
 };
 
 export default positionsApi;
